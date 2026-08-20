@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Paper Catalog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE6D6;
+    --card:#E4D9BE;
+    --ink:#2A2822;
+    --ink-soft:#5B5647;
+    --accent:#8B3A2B;
+    --accent-soft:#8B3A2B22;
+    --teal:#2F4A44;
+    --teal-soft:#2F4A4418;
+    --line:#B8A87E;
+    --line-soft:#B8A87E55;
+    --danger:#8B3A2B;
+    --good:#3E5C46;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* ---- header / drawer label ---- */
+  .drawer-label{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+  .drawer-label h1{font-family:'Lora',serif;font-weight:700;font-size:1.9rem;margin:0;letter-spacing:-0.01em;}
+  .drawer-label .count{font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--ink-soft);border:1px solid var(--line);padding:2px 8px;border-radius:20px;white-space:nowrap;}
+  .subhead{color:var(--ink-soft);font-size:0.92rem;margin:0 0 22px;max-width:640px;line-height:1.5;}
+
+  /* ---- identity strip ---- */
+  .identity{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--ink-soft);margin-bottom:22px;font-family:'IBM Plex Mono',monospace;}
+  .identity input{font-family:'IBM Plex Mono',monospace;font-size:0.82rem;border:none;border-bottom:1px dashed var(--line);background:transparent;color:var(--ink);padding:2px 2px;width:140px;}
+  .identity input:focus{outline:none;border-bottom:1px solid var(--accent);}
+
+  /* ---- add panel ---- */
+  .add-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:30px;}
+  .add-panel label{display:block;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;}
+  .add-panel textarea{width:100%;min-height:64px;resize:vertical;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:0.88rem;color:var(--ink);}
+  .add-panel textarea:focus{outline:none;border-color:var(--accent);}
+  .add-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px;flex-wrap:wrap;}
+  .hint{font-size:0.78rem;color:var(--ink-soft);}
+  button{font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;border-radius:var(--radius);}
+  .btn-primary{background:var(--accent);color:#F6EFE2;border:1px solid var(--accent);padding:9px 18px;font-size:0.85rem;}
+  .btn-primary:hover{background:#7a3225;}
+  .btn-primary:disabled{opacity:0.5;cursor:default;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink-soft);padding:8px 14px;font-size:0.8rem;}
+  .btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .btn-text{background:none;border:none;color:var(--teal);font-size:0.78rem;padding:2px 4px;text-decoration:underline;text-underline-offset:2px;}
+
+  /* ---- toolbar ---- */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+  .toolbar input[type=text]{flex:1;min-width:180px;border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px;font-size:0.88rem;background:#fff;color:var(--ink);}
+  .toolbar input[type=text]:focus{outline:none;border-color:var(--accent);}
+  .toolbar select{border:1px solid var(--line);border-radius:var(--radius);padding:9px 10px;font-size:0.82rem;background:#fff;color:var(--ink);font-family:'Inter',sans-serif;}
+  .tag-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+  .tag-chip{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;background:transparent;}
+  .tag-chip.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+
+  /* ---- error / empty states ---- */
+  .banner{font-size:0.82rem;padding:10px 14px;border-radius:var(--radius);margin-bottom:16px;}
+  .banner.error{background:#8B3A2B14;border:1px solid var(--accent-soft);color:var(--accent);}
+  .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .empty h3{font-family:'Lora',serif;font-size:1.2rem;color:var(--ink);margin-bottom:6px;}
+  .empty p{font-size:0.88rem;max-width:380px;margin:0 auto;line-height:1.5;}
+
+  /* ---- grid ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;}
+
+  /* ---- card ---- */
+  .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding-top:34px;box-shadow:2px 3px 0 var(--line-soft);}
+  .tab{position:absolute;top:-1px;left:14px;background:var(--paper);border:1px solid var(--line);border-bottom:none;border-radius:3px 3px 0 0;padding:3px 10px 6px;font-family:'IBM Plex Mono',monospace;font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .tab.type-doi{color:var(--teal);}
+  .tab.type-arxiv{color:#5b4a8a;}
+  .tab.type-pubmed{color:#2f6b4a;}
+  .tab.type-manual{color:var(--accent);}
+  .card-inner{padding:0 16px 14px;}
+  .card-title{font-family:'Lora',serif;font-weight:600;font-size:1.02rem;line-height:1.35;margin:0 0 6px;}
+  .card-title a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);}
+  .card-title a:hover{border-color:var(--ink);}
+  .card-meta{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--ink-soft);margin-bottom:2px;}
+  .card-journal{font-size:0.78rem;font-style:italic;color:var(--ink-soft);margin-bottom:10px;}
+  .card-loading{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--ink-soft);}
+  .card-loading .dot{animation:blink 1.2s infinite;}
+  @keyframes blink{0%,100%{opacity:0.3;}50%{opacity:1;}}
+
+  .abstract-toggle{font-size:0.76rem;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px;background:none;border:none;padding:0;margin-bottom:8px;}
+  .abstract{font-size:0.81rem;line-height:1.5;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--radius);padding:8px 10px;margin-bottom:10px;display:none;}
+  .abstract.open{display:block;}
+
+  .notes-block textarea{width:100%;min-height:52px;font-family:'Inter',sans-serif;font-size:0.85rem;border:1px solid var(--line-soft);border-radius:var(--radius);background:#fff;padding:8px 10px;color:var(--ink);resize:vertical;}
+  .notes-block textarea:focus{outline:none;border-color:var(--accent);}
+  .notes-label{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin:8px 0 4px;}
+
+  .tags-row{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px;}
+  .tag-pill{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;background:var(--teal-soft);color:var(--teal);padding:2px 8px;border-radius:20px;}
+
+  .cited-row{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 4px;}
+  .cited-label-row{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin:8px 0 4px;}
+  .cited-pill{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+  .cited-pill button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.75rem;line-height:1;padding:0;}
+  .cited-badge{position:absolute;top:-1px;right:14px;background:var(--accent);color:#F6EFE2;border-radius:0 0 3px 3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.05em;text-transform:uppercase;}
+
+  .card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:8px;border-top:1px dashed var(--line);font-size:0.72rem;color:var(--ink-soft);}
+  .card-actions{display:flex;gap:10px;}
+  .card-actions button{background:none;border:none;font-size:0.72rem;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;}
+  .card-actions button.danger{color:var(--danger);}
+
+  .edit-field{width:100%;margin-bottom:6px;font-family:'Inter',sans-serif;font-size:0.84rem;border:1px solid var(--line);border-radius:var(--radius);padding:6px 8px;background:#fff;color:var(--ink);}
+  .edit-field:focus{outline:none;border-color:var(--accent);}
+  .edit-label{font-family:'IBM Plex Mono',monospace;font-size:0.64rem;text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px;display:block;}
+
+  @media (max-width:520px){
+    .drawer-label h1{font-size:1.5rem;}
+    .toolbar{flex-direction:column;align-items:stretch;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="drawer-label">
+    <h1>Paper Catalog</h1>
+    <span class="count" id="count">0 entries</span>
+  </div>
+  <p class="subhead">Paste one or more links — DOI, arXiv, or PubMed auto-fill title, authors, and abstract. Anything else (Scholar, PDFs) gets a quick manual card. Shared with whoever has this page.</p>
+
+  <div class="identity">
+    <span>Adding as</span>
+    <input id="nameInput" type="text" placeholder="your name">
+  </div>
+
+  <div class="add-panel">
+    <label for="addInput">Add papers (one link per line)</label>
+    <textarea id="addInput" placeholder="https://doi.org/10.1038/s41586-021-03819-2&#10;https://arxiv.org/abs/2307.09288&#10;https://pubmed.ncbi.nlm.nih.gov/33057194/"></textarea>
+    <div class="add-row">
+      <span class="hint" id="addHint">DOI / arXiv / PubMed links auto-fill. Others open a manual card.</span>
+      <button class="btn-primary" id="addBtn">Add to catalog</button>
+    </div>
+  </div>
+
+  <div id="banner"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Search title, author, tag, or note…">
+    <select id="sortSelect">
+      <option value="newest">Newest added</option>
+      <option value="title">Title A–Z</option>
+      <option value="year">Year, newest first</option>
+    </select>
+    <button class="btn-ghost" id="refreshBtn">Refresh</button>
+  </div>
+  <div class="tag-filters" id="tagFilters"></div>
+
+  <div id="gridArea"></div>
+
+</div>
+
+<script>
+/* ============================================================
+   ONE-TIME SETUP: paste your Google Apps Script Web App URL below.
+   See SETUP.md (or the chat instructions) for how to get this URL.
+   It will look like: https://script.google.com/macros/s/AKfycb.../exec
+   ============================================================ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbyGKI56huqFPeiZwuDDTkf4I3HgUnU_7lh1NCvtpszmslEclqi9CmjH7cfLCDe7_7GJyQ/exec';
+
+let library = [];
+let activeTag = null;
+
+// ---------- helpers ----------
+function uid(){ return 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function stripTags(s){ return (s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
+function showBanner(msg, type){
+  const b = document.getElementById('banner');
+  b.innerHTML = msg ? `<div class="banner ${type||'error'}">${esc(msg)}</div>` : '';
+}
+
+function configured(){
+  return API_URL && !API_URL.includes('PASTE_YOUR');
+}
+
+function getName(){
+  const saved = localStorage.getItem('paper-catalog-name');
+  if(saved) document.getElementById('nameInput').value = saved;
+}
+document.getElementById('nameInput').addEventListener('change', (e)=>{
+  localStorage.setItem('paper-catalog-name', e.target.value.trim());
+});
+
+async function apiGet(){
+  const res = await fetch(API_URL, { method:'GET' });
+  if(!res.ok) throw new Error('GET failed: ' + res.status);
+  return res.json();
+}
+async function apiPost(payload){
+  const res = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
+  if(!res.ok) throw new Error('POST failed: ' + res.status);
+  return res.json();
+}
+
+async function loadLibrary(){
+  if(!configured()){
+    showBanner('Not connected yet — paste your Google Apps Script URL into API_URL near the top of the <script> tag. See setup instructions.', 'error');
+    library = [];
+    render();
+    return;
+  }
+  try{
+    const data = await apiGet();
+    library = data.papers || [];
+    showBanner('');
+  }catch(e){
+    showBanner('Could not reach the shared sheet. Check your internet connection and that the Apps Script URL is correct and deployed.', 'error');
+  }
+  render();
+}
+
+// Upsert one paper to the sheet and update local state.
+async function upsertPaper(paper){
+  library = [paper, ...library.filter(p=>p.id!==paper.id)];
+  render();
+  try{
+    await apiPost({ action:'upsert', paper });
+  }catch(e){
+    showBanner('Saved locally but failed to sync to the shared sheet. Refresh to check.', 'error');
+  }
+}
+
+async function patchPaper(id, patch){
+  const existing = library.find(p=>p.id===id);
+  if(!existing) return;
+  const updated = { ...existing, ...patch };
+  library = library.map(p=>p.id===id?updated:p);
+  render();
+  try{
+    await apiPost({ action:'upsert', paper: updated });
+  }catch(e){
+    showBanner('Saved locally but failed to sync to the shared sheet. Refresh to check.', 'error');
+  }
+}
+
+async function deletePaper(id){
+  library = library.filter(p=>p.id!==id);
+  render();
+  try{
+    await apiPost({ action:'delete', id });
+  }catch(e){
+    showBanner('Removed locally but failed to sync the deletion. Refresh to check.', 'error');
+  }
+}
+
+// ---------- link parsing ----------
+function parseInput(raw){
+  const s = raw.trim();
+  let m = s.match(/(10\.\d{4,9}\/[^\s"<>]+)/i);
+  if(m) return { type:'doi', id: m[1].replace(/[\.,;]+$/,''), url:s };
+  m = s.match(/arxiv\.org\/(?:abs|pdf)\/([a-zA-Z0-9.\-\/]+?)(?:v\d+)?(?:\.pdf)?(?:[?#].*)?$/i) || s.match(/arxiv:\s*([a-zA-Z0-9.\-\/]+)/i);
+  if(m) return { type:'arxiv', id: m[1], url:s };
+  m = s.match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)/i) || s.match(/pmid:\s*(\d+)/i);
+  if(m) return { type:'pubmed', id: m[1], url:s };
+  return { type:'manual', id:null, url:s };
+}
+
+async function fetchDoi(doi){
+  const res = await fetch('https://api.crossref.org/works/' + encodeURIComponent(doi));
+  if(!res.ok) throw new Error('crossref failed');
+  const data = await res.json();
+  const m = data.message;
+  const authors = (m.author||[]).map(a => [a.given,a.family].filter(Boolean).join(' ')).filter(Boolean);
+  const dateParts = (m['published-print']||m['published-online']||m.issued||{})['date-parts'];
+  const year = dateParts && dateParts[0] ? dateParts[0][0] : '';
+  return {
+    title: (m.title && m.title[0]) || '',
+    authors: authors.join(', '),
+    year: year ? String(year) : '',
+    journal: (m['container-title'] && m['container-title'][0]) || '',
+    abstract: stripTags(m.abstract || ''),
+    doi: m.DOI || doi,
+    url: m.URL || ('https://doi.org/' + doi)
+  };
+}
+
+async function fetchArxiv(id){
+  const res = await fetch('https://export.arxiv.org/api/query?id_list=' + encodeURIComponent(id));
+  if(!res.ok) throw new Error('arxiv failed');
+  const text = await res.text();
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  const entry = doc.querySelector('entry');
+  if(!entry) throw new Error('no arxiv entry');
+  const title = (entry.querySelector('title')?.textContent || '').replace(/\s+/g,' ').trim();
+  const authors = Array.from(entry.querySelectorAll('author > name')).map(n=>n.textContent.trim()).join(', ');
+  const published = entry.querySelector('published')?.textContent || '';
+  const summary = (entry.querySelector('summary')?.textContent || '').replace(/\s+/g,' ').trim();
+  const linkEl = entry.querySelector('link[rel="alternate"]') || entry.querySelector('id');
+  return {
+    title, authors,
+    year: published ? published.slice(0,4) : '',
+    journal: 'arXiv preprint',
+    abstract: summary,
+    doi: '',
+    url: linkEl ? (linkEl.getAttribute('href') || linkEl.textContent) : ('https://arxiv.org/abs/' + id)
+  };
+}
+
+async function fetchPubmed(id){
+  const sumRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${id}&retmode=json`);
+  if(!sumRes.ok) throw new Error('pubmed failed');
+  const sumData = await sumRes.json();
+  const rec = sumData.result && sumData.result[id];
+  if(!rec) throw new Error('no pubmed record');
+  const authors = (rec.authors||[]).map(a=>a.name).join(', ');
+  let abstract = '';
+  try{
+    const absRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${id}&rettype=abstract&retmode=text`);
+    if(absRes.ok){
+      const raw = await absRes.text();
+      const parts = raw.split(/\n\n+/).map(p=>p.trim()).filter(Boolean);
+      abstract = parts.find(p => p.length > 200) || '';
+    }
+  }catch(e){ /* abstract optional */ }
+  return {
+    title: rec.title || '',
+    authors,
+    year: (rec.pubdate||'').slice(0,4),
+    journal: rec.fulljournalname || rec.source || '',
+    abstract,
+    doi: (rec.elocationid||'').replace(/^doi:\s*/i,''),
+    url: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+  };
+}
+
+async function resolveEntry(raw){
+  const parsed = parseInput(raw);
+  const base = { id: uid(), sourceUrl: raw.trim(), type: parsed.type, tags: [], notes: '', abstract: '', citedIn: [] };
+  if(parsed.type === 'manual'){
+    return { ...base, title: '', authors: '', year: '', journal: '', doi: '', url: parsed.url, needsInfo:true };
+  }
+  try{
+    let meta;
+    if(parsed.type === 'doi') meta = await fetchDoi(parsed.id);
+    else if(parsed.type === 'arxiv') meta = await fetchArxiv(parsed.id);
+    else meta = await fetchPubmed(parsed.id);
+    return { ...base, ...meta, needsInfo: !meta.title };
+  }catch(e){
+    return { ...base, title:'', authors:'', year:'', journal:'', doi:'', url: parsed.url, needsInfo:true, lookupFailed:true };
+  }
+}
+
+// ---------- add flow ----------
+document.getElementById('addBtn').addEventListener('click', addPapers);
+async function addPapers(){
+  const ta = document.getElementById('addInput');
+  const lines = ta.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return;
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  const name = document.getElementById('nameInput').value.trim() || 'unknown';
+  showBanner('');
+
+  const existingUrls = new Set(library.map(p=>p.sourceUrl));
+  let addedCount = 0, skipped = 0;
+
+  for(const line of lines){
+    if(existingUrls.has(line)){ skipped++; continue; }
+    document.getElementById('addHint').textContent = `Looking up ${addedCount + skipped + 1} of ${lines.length}…`;
+    const entry = await resolveEntry(line);
+    entry.addedBy = name;
+    entry.addedAt = new Date().toISOString();
+    await upsertPaper(entry);
+    existingUrls.add(line);
+    addedCount++;
+  }
+
+  ta.value = '';
+  btn.disabled = false;
+  document.getElementById('addHint').textContent = 'DOI / arXiv / PubMed links auto-fill. Others open a manual card.';
+  if(skipped) showBanner(`Added ${addedCount}. Skipped ${skipped} already in the catalog.`, 'error');
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadLibrary);
+window.addEventListener('focus', loadLibrary);
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('sortSelect').addEventListener('change', render);
+
+// ---------- card actions ----------
+async function deleteEntry(id){
+  if(!confirm('Remove this paper from the catalog?')) return;
+  await deletePaper(id);
+}
+
+async function saveEdit(id){
+  const card = document.querySelector(`[data-id="${id}"]`);
+  const get = sel => card.querySelector(sel)?.value ?? '';
+  const patch = {
+    title: get('.f-title'), authors: get('.f-authors'), year: get('.f-year'),
+    journal: get('.f-journal'), doi: get('.f-doi'),
+    tags: get('.f-tags').split(',').map(t=>t.trim()).filter(Boolean),
+    notes: get('.f-notes'),
+    citedIn: get('.f-citedin').split(',').map(t=>t.trim()).filter(Boolean),
+    needsInfo: false
+  };
+  await patchPaper(id, patch);
+}
+
+async function quickAddCitation(id){
+  const where = window.prompt('Cited in which of your papers / drafts?');
+  if(!where || !where.trim()) return;
+  const existing = library.find(p=>p.id===id);
+  if(!existing) return;
+  const list = existing.citedIn || [];
+  if(list.includes(where.trim())) return;
+  await patchPaper(id, { citedIn: [...list, where.trim()] });
+}
+
+async function removeCitation(id, name){
+  const existing = library.find(p=>p.id===id);
+  if(!existing) return;
+  await patchPaper(id, { citedIn: (existing.citedIn||[]).filter(c=>c!==name) });
+}
+
+async function saveNotesOnly(id, value){
+  await patchPaper(id, { notes: value });
+}
+
+function toggleEdit(id){
+  const el = document.querySelector(`.card[data-id="${id}"]`);
+  el.classList.toggle('editing');
+  render(true, id);
+}
+function toggleAbstract(id){
+  document.getElementById('abs-'+id).classList.toggle('open');
+}
+function copyCitation(p){
+  const text = `${p.authors || 'Unknown authors'} (${p.year||'n.d.'}). ${p.title||'Untitled'}. ${p.journal||''}${p.url ? ' ' + p.url : ''}`.trim();
+  navigator.clipboard?.writeText(text);
+}
+
+// ---------- render ----------
+function render(preserveEditing, editingId){
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  const allTags = [...new Set(library.flatMap(p=>p.tags||[]))].sort();
+  const tagFilterEl = document.getElementById('tagFilters');
+  tagFilterEl.innerHTML = allTags.map(t =>
+    `<button class="tag-chip ${activeTag===t?'active':''}" onclick="setTagFilter('${esc(t)}')">${esc(t)}</button>`
+  ).join('');
+
+  let items = library.filter(p=>{
+    if(activeTag && !(p.tags||[]).includes(activeTag)) return false;
+    if(!search) return true;
+    const hay = [p.title,p.authors,p.journal,p.notes,p.abstract,(p.tags||[]).join(' '),(p.citedIn||[]).join(' ')].join(' ').toLowerCase();
+    return hay.includes(search);
+  });
+
+  if(sort==='title') items.sort((a,b)=>(a.title||'zzz').localeCompare(b.title||'zzz'));
+  else if(sort==='year') items.sort((a,b)=>(b.year||'0')-(a.year||'0'));
+  else items.sort((a,b)=> new Date(b.addedAt||0) - new Date(a.addedAt||0));
+
+  document.getElementById('count').textContent = `${library.length} ${library.length===1?'entry':'entries'}`;
+
+  const gridArea = document.getElementById('gridArea');
+  if(!library.length){
+    gridArea.innerHTML = `<div class="empty"><h3>The drawer's empty</h3><p>Paste a link above — a DOI, an arXiv page, a PubMed page, or anything else — to start the catalog.</p></div>`;
+    return;
+  }
+  if(!items.length){
+    gridArea.innerHTML = `<div class="empty"><h3>No matches</h3><p>Nothing fits that search or tag filter.</p></div>`;
+    return;
+  }
+
+  gridArea.innerHTML = `<div class="grid">${items.map(p => cardHtml(p, editingId===p.id)).join('')}</div>`;
+
+  items.forEach(p=>{
+    const notesEl = document.querySelector(`.card[data-id="${p.id}"] .f-notes-live`);
+    if(notesEl){
+      notesEl.addEventListener('blur', ()=> saveNotesOnly(p.id, notesEl.value));
+    }
+  });
+}
+
+function setTagFilter(t){ activeTag = (activeTag===t) ? null : t; render(); }
+
+function cardHtml(p, editing){
+  const typeLabel = {doi:'DOI', arxiv:'arXiv', pubmed:'PubMed', manual:'Manual'}[p.type] || 'Manual';
+  const addedDate = p.addedAt ? new Date(p.addedAt).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
+
+  if(editing){
+    return `<div class="card editing" data-id="${p.id}">
+      <div class="tab type-${p.type}">${typeLabel}</div>
+      <div class="card-inner">
+        <label class="edit-label">Title</label>
+        <input class="edit-field f-title" value="${esc(p.title)}">
+        <label class="edit-label">Authors</label>
+        <input class="edit-field f-authors" value="${esc(p.authors)}">
+        <label class="edit-label">Journal / venue</label>
+        <input class="edit-field f-journal" value="${esc(p.journal)}">
+        <label class="edit-label">Year</label>
+        <input class="edit-field f-year" value="${esc(p.year)}" style="width:100px">
+        <label class="edit-label">DOI</label>
+        <input class="edit-field f-doi" value="${esc(p.doi)}">
+        <label class="edit-label">Tags (comma separated)</label>
+        <input class="edit-field f-tags" value="${esc((p.tags||[]).join(', '))}">
+        <label class="edit-label">Cited in (comma separated, e.g. your draft/paper names)</label>
+        <input class="edit-field f-citedin" value="${esc((p.citedIn||[]).join(', '))}">
+        <label class="edit-label">Notes</label>
+        <textarea class="edit-field f-notes" rows="3">${esc(p.notes)}</textarea>
+        <div class="card-footer">
+          <span></span>
+          <div class="card-actions">
+            <button onclick="toggleEdit('${p.id}')">Cancel</button>
+            <button onclick="saveEdit('${p.id}')">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const bodyContent = p.needsInfo
+    ? `<div class="card-loading">${p.lookupFailed ? 'Auto-lookup did not work — add details manually.' : 'Link saved — add title & authors.'}</div>`
+    : `<h3 class="card-title"><a href="${esc(p.url||p.sourceUrl)}" target="_blank" rel="noopener">${esc(p.title || '(untitled)')}</a></h3>
+       <div class="card-meta">${esc(p.authors)}${p.year ? ' · ' + esc(p.year) : ''}</div>
+       <div class="card-journal">${esc(p.journal)}</div>`;
+
+  const abstractBlock = p.abstract ? `
+    <button class="abstract-toggle" onclick="toggleAbstract('${p.id}')">Abstract</button>
+    <div class="abstract" id="abs-${p.id}">${esc(p.abstract)}</div>` : '';
+
+  const tagsBlock = (p.tags && p.tags.length) ? `<div class="tags-row">${p.tags.map(t=>`<span class="tag-pill">${esc(t)}</span>`).join('')}</div>` : '';
+
+  const citedBlock = (p.citedIn && p.citedIn.length) ? `
+    <div class="cited-label-row">Cited in our work</div>
+    <div class="cited-row">${p.citedIn.map(c=>`<span class="cited-pill">${esc(c)}<button onclick="removeCitation('${p.id}','${esc(c).replace(/'/g,"\\'")}')" title="Remove">×</button></span>`).join('')}</div>` : '';
+  const citedBadge = (p.citedIn && p.citedIn.length) ? `<div class="cited-badge">Cited ×${p.citedIn.length}</div>` : '';
+
+  return `<div class="card" data-id="${p.id}">
+    <div class="tab type-${p.type}">${typeLabel}</div>
+    ${citedBadge}
+    <div class="card-inner">
+      ${bodyContent}
+      ${abstractBlock}
+      ${tagsBlock}
+      ${citedBlock}
+      <div class="notes-label">Notes</div>
+      <div class="notes-block"><textarea class="f-notes-live" placeholder="Your thoughts on this one…">${esc(p.notes)}</textarea></div>
+      <div class="card-footer">
+        <span>${esc(p.addedBy||'')}${addedDate ? ' · ' + addedDate : ''}</span>
+        <div class="card-actions">
+          <button onclick="quickAddCitation('${p.id}')">+ Cited</button>
+          <button onclick="copyCitation(${JSON.stringify(p).replace(/"/g,'&quot;')})">Cite</button>
+          <button onclick="toggleEdit('${p.id}')">Edit</button>
+          <button class="danger" onclick="deleteEntry('${p.id}')">Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- init ----------
+(async function init(){
+  getName();
+  await loadLibrary();
+})();
+</script>
+</body>
+</html>
