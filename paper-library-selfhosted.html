@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Bibli du turfu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Catalog</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -79,15 +80,16 @@
   .list-container{border-top:1px solid var(--line);}
   .list-row{display:flex;align-items:center;gap:16px;padding:10px 6px;border-bottom:1px solid var(--line);}
   .list-main{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px;}
-  .list-title{font-family:'Lora',serif;font-weight:600;font-size:1.02rem;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46%;flex-shrink:0;}
+  .list-title{font-family:'Lora',serif;font-weight:600;font-size:0.9rem;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:300px;flex-shrink:0;}
   .list-title:hover{border-color:var(--ink);}
-  .list-meta{font-size:0.8rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .list-year{font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--ink-soft);flex-shrink:0;width:2.8em;}
+  .list-authors{font-size:0.78rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
   .list-side{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .list-user{font-family:'Lora',serif;font-weight:600;font-size:0.8rem;color:var(--ink);white-space:nowrap;}
   .list-actions{display:flex;gap:9px;}
   .list-actions button{background:none;border:none;font-size:0.72rem;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;white-space:nowrap;}
   .list-actions button.danger{color:var(--danger);}
-  .list-row.needs-info .list-meta{font-style:italic;}
+  .list-row.needs-info .list-authors{font-style:italic;}
 
   /* ---- card ---- */
   .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding-top:34px;box-shadow:2px 3px 0 var(--line-soft);}
@@ -96,9 +98,9 @@
   .card-title{font-family:'Lora',serif;font-weight:600;font-size:1.02rem;line-height:1.35;margin:0 0 6px;}
   .card-title a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);}
   .card-title a:hover{border-color:var(--ink);}
-  .card-meta-block{font-size:0.8rem;color:var(--ink-soft);line-height:1.4;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;}
-  .card-meta-block .authors{font-family:'IBM Plex Mono',monospace;}
-  .card-meta-block em{font-style:italic;}
+  .card-authors{font-size:0.8rem;color:var(--ink-soft);line-height:1.4;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;}
+  .card-yearjournal{font-size:0.8rem;color:var(--ink-soft);line-height:1.4;margin-bottom:10px;}
+  .card-yearjournal em{font-style:italic;}
   .card-loading{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--ink-soft);}
   .card-loading .dot{animation:blink 1.2s infinite;}
   @keyframes blink{0%,100%{opacity:0.3;}50%{opacity:1;}}
@@ -148,7 +150,7 @@
 
     .list-row{flex-wrap:wrap;gap:6px 12px;padding:10px 4px;}
     .list-main{flex-basis:100%;flex-wrap:wrap;}
-    .list-title{max-width:100%;}
+    .list-title{width:100%;}
     .list-side{width:100%;justify-content:space-between;}
     .list-user{display:none;}
 
@@ -527,7 +529,11 @@ function render(){
   });
 
   if(sort==='title') items.sort((a,b)=>(a.title||'zzz').localeCompare(b.title||'zzz'));
-  else if(sort==='author') items.sort((a,b)=>(a.authors||'zzz').localeCompare(b.authors||'zzz'));
+  else if(sort==='author') items.sort((a,b)=>{
+    const an = formatAuthorsList(a.authors)[0] || 'zzz';
+    const bn = formatAuthorsList(b.authors)[0] || 'zzz';
+    return an.localeCompare(bn);
+  });
   else if(sort==='year') items.sort((a,b)=>(b.year||'0')-(a.year||'0'));
   else items.sort((a,b)=> new Date(b.addedAt||0) - new Date(a.addedAt||0));
 
@@ -592,14 +598,15 @@ function editCardHtml(p){
 }
 
 function cardHtml(p){
-  const typeLabel = {doi:'DOI', arxiv:'arXiv', pubmed:'PubMed', manual:'Manual'}[p.type] || 'Manual';
+  const typeLabel = {doi:'DOI', arxiv:'arXiv', pubmed:'PubMed', manual:'Man.'}[p.type] || 'Man.';
   const addedDate = p.addedAt ? new Date(p.addedAt).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
   const who = p.addedBy || 'unknown';
 
   const bodyContent = p.needsInfo
     ? `<div class="card-loading">${p.lookupFailed ? 'Auto-lookup did not work — add details manually.' : 'Link saved — add title & authors.'}</div>`
     : `<h3 class="card-title"><a href="${esc(p.url||p.sourceUrl)}" target="_blank" rel="noopener">${esc(p.title || '(untitled)')}</a></h3>
-       <div class="card-meta-block"><span class="authors">${esc(p.authors)}${p.year ? ' (' + esc(p.year) + ')' : ''}</span>${p.journal ? '. <em>' + esc(p.journal) + '</em>' : ''}</div>`;
+       ${p.authors ? `<div class="card-authors">${esc(formatAuthorsList(p.authors).join('; '))}</div>` : ''}
+       <div class="card-yearjournal">${p.year ? esc(p.year) : ''}${p.year && p.journal ? ' · ' : ''}${p.journal ? '<em>' + esc(p.journal) + '</em>' : ''}</div>`;
 
   const abstractBlock = p.abstract ? `
     <button class="abstract-toggle" onclick="toggleAbstract('${p.id}')">Abstract</button>
@@ -636,25 +643,37 @@ function cardHtml(p){
 }
 
 // Compact single-line-per-paper view, built for fast scanning.
-// Priority order: title, first few authors, year. Notes, tags, abstract,
-// cited-in, and journal are intentionally dropped here — switch to Grid
-// or click Edit to see/change those.
-function shortAuthors(authors, max){
-  if(!authors) return '';
-  const names = authors.split(',').map(a=>a.trim()).filter(Boolean);
-  if(names.length <= max) return names.join(', ');
-  return names.slice(0, max).join(', ') + ', et al.';
+// Priority order: title, year (always aligned), first few authors.
+// Notes, tags, abstract, cited-in, and journal are intentionally
+// dropped here — switch to Grid or click Edit to see/change those.
+function lastNameFirst(fullName){
+  const parts = fullName.trim().split(/\s+/);
+  if(parts.length < 2) return fullName;
+  const last = parts[parts.length-1];
+  const rest = parts.slice(0,-1).join(' ');
+  return last + ', ' + rest;
+}
+function formatAuthorsList(authorsStr){
+  return (authorsStr||'').split(',').map(s=>s.trim()).filter(Boolean).map(lastNameFirst);
+}
+function shortAuthors(authorsStr, max){
+  const names = formatAuthorsList(authorsStr);
+  if(!names.length) return '';
+  if(names.length <= max) return names.join('; ');
+  return names.slice(0, max).join('; ') + '; et al.';
 }
 
 function listRowHtml(p){
-  const typeLabel = {doi:'DOI', arxiv:'arXiv', pubmed:'PubMed', manual:'Manual'}[p.type] || 'Manual';
+  const typeLabel = {doi:'DOI', arxiv:'arXiv', pubmed:'PubMed', manual:'Man.'}[p.type] || 'Man.';
   const who = p.addedBy || 'unknown';
 
   const mainContent = p.needsInfo
     ? `<a class="list-title" href="${esc(p.url||p.sourceUrl)}" target="_blank" rel="noopener">${p.lookupFailed ? '(lookup failed — needs info)' : '(needs title & authors)'}</a>
-       <span class="list-meta"></span>`
+       <span class="list-year"></span>
+       <span class="list-authors"></span>`
     : `<a class="list-title" href="${esc(p.url||p.sourceUrl)}" target="_blank" rel="noopener">${esc(p.title || '(untitled)')}</a>
-       <span class="list-meta">${esc(shortAuthors(p.authors, 3))}${p.year ? ' (' + esc(p.year) + ')' : ''}</span>`;
+       <span class="list-year">${p.year ? esc(p.year) : ''}</span>
+       <span class="list-authors">${esc(shortAuthors(p.authors, 3))}</span>`;
 
   return `<div class="list-row ${p.needsInfo?'needs-info':''}" data-id="${p.id}">
     <div class="list-main">${mainContent}</div>
