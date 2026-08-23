@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bibli du turfu</title>
+<title>Paper Catalog</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -21,6 +21,7 @@
     --spring:#DBE64C;
     --mantis:#74C365;
     --danger:#001F3F;
+    --remove:#3E7A32;
     --good:#00804C;
     --radius:2px;
   }
@@ -69,6 +70,7 @@
   /* ---- error / empty states ---- */
   .banner{font-size:0.82rem;padding:10px 14px;border-radius:var(--radius);margin-bottom:16px;}
   .banner.error{background:#001F3F14;border:1px solid var(--line);color:var(--danger);}
+  .banner.ok{background:var(--accent-soft);border:1px solid var(--line);color:var(--accent);}
   .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
   .empty h3{font-family:'Lora',serif;font-size:1.2rem;color:var(--ink);margin-bottom:6px;}
   .empty p{font-size:0.88rem;max-width:380px;margin:0 auto;line-height:1.5;}
@@ -88,7 +90,7 @@
   .list-user{font-family:'Lora',serif;font-weight:600;font-size:0.8rem;color:var(--ink);white-space:nowrap;}
   .list-actions{display:flex;gap:9px;}
   .list-actions button{background:none;border:none;font-size:0.72rem;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;white-space:nowrap;}
-  .list-actions button.danger{color:var(--danger);}
+  .list-actions button.danger{color:var(--remove);}
   .list-row.needs-info .list-authors{font-style:italic;}
 
   /* ---- card ---- */
@@ -111,6 +113,11 @@
   .type-pill.type-pubmed{color:#3E7A32;background:#3E7A3215;}
   .type-pill.type-manual{color:var(--ink-soft);background:#51637A15;}
 
+  .pdf-toggle{font-family:'Inter',sans-serif;font-weight:600;font-size:0.7rem;padding:3px 9px;border-radius:10px;border:none;background:#51637A15;color:var(--ink-soft);cursor:pointer;white-space:nowrap;}
+  .pdf-toggle:hover{background:#51637A28;}
+  .pdf-toggle.active{background:var(--accent);color:var(--paper);}
+  .pdf-toggle.active:hover{background:#00693F;}
+
   .abstract-toggle{font-size:0.76rem;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px;background:none;border:none;padding:0;margin-bottom:8px;}
   .abstract{font-size:0.81rem;line-height:1.5;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--radius);padding:8px 10px;margin-bottom:10px;display:none;}
   .abstract.open{display:block;}
@@ -122,8 +129,8 @@
   .tags-row{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px;}
   .tag-pill{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;background:var(--teal-soft);color:var(--teal);padding:2px 8px;border-radius:20px;}
 
-  .cited-row{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 4px;}
-  .cited-label-row{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin:8px 0 4px;}
+  .cited-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:10px 0 4px;}
+  .cited-label-inline{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-right:2px;}
   .cited-pill{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:20px;display:flex;align-items:center;gap:5px;}
   .cited-pill button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.75rem;line-height:1;padding:0;}
   .cited-badge{position:absolute;top:-1px;right:14px;background:var(--accent);color:var(--paper);border-radius:0 0 3px 3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.05em;text-transform:uppercase;}
@@ -131,7 +138,7 @@
   .card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:8px;border-top:1px dashed var(--line);font-size:0.72rem;color:var(--ink-soft);}
   .card-actions{display:flex;gap:10px;}
   .card-actions button{background:none;border:none;font-size:0.72rem;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;}
-  .card-actions button.danger{color:var(--danger);}
+  .card-actions button.danger{color:var(--remove);}
 
   .edit-field{width:100%;margin-bottom:6px;font-family:'Inter',sans-serif;font-size:0.84rem;border:1px solid var(--line);border-radius:var(--radius);padding:6px 8px;background:#fff;color:var(--ink);}
   .edit-field:focus{outline:none;border-color:var(--accent);}
@@ -229,6 +236,9 @@ function stripTags(s){ return (s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' '
 function showBanner(msg, type){
   const b = document.getElementById('banner');
   b.innerHTML = msg ? `<div class="banner ${type||'error'}">${esc(msg)}</div>` : '';
+  if(msg && type === 'ok'){
+    setTimeout(()=>{ if(b.innerHTML.includes(esc(msg))) b.innerHTML = ''; }, 3000);
+  }
 }
 
 function configured(){
@@ -387,7 +397,7 @@ async function fetchPubmed(id){
 
 async function resolveEntry(raw){
   const parsed = parseInput(raw);
-  const base = { id: uid(), sourceUrl: raw.trim(), type: parsed.type, tags: [], notes: '', abstract: '', citedIn: [] };
+  const base = { id: uid(), sourceUrl: raw.trim(), type: parsed.type, tags: [], notes: '', abstract: '', citedIn: [], pdfSaved: false };
   if(parsed.type === 'manual'){
     return { ...base, title: '', authors: '', year: '', journal: '', doi: '', url: parsed.url, needsInfo:true };
   }
@@ -480,6 +490,12 @@ async function saveNotesOnly(id, value){
   await patchPaper(id, { notes: value });
 }
 
+async function togglePdfSaved(id){
+  const existing = library.find(p=>p.id===id);
+  if(!existing) return;
+  await patchPaper(id, { pdfSaved: !existing.pdfSaved });
+}
+
 function toggleEdit(id){
   editingId = (editingId === id) ? null : id;
   render();
@@ -497,9 +513,60 @@ function setUserFilter(u){
 function toggleAbstract(id){
   document.getElementById('abs-'+id).classList.toggle('open');
 }
-function copyCitation(p){
-  const text = `${p.authors || 'Unknown authors'} (${p.year||'n.d.'}). ${p.title||'Untitled'}. ${p.journal||''}${p.url ? ' ' + p.url : ''}`.trim();
-  navigator.clipboard?.writeText(text);
+
+// ---------- APA citation ----------
+function apaAuthorName(fullName){
+  const parts = fullName.trim().split(/\s+/);
+  if(parts.length < 2) return fullName;
+  const last = parts[parts.length-1];
+  const initials = parts.slice(0,-1).map(n => n[0] ? n[0].toUpperCase()+'.' : '').join(' ');
+  return last + ', ' + initials;
+}
+function apaAuthorsList(authorsStr){
+  const names = (authorsStr||'').split(',').map(s=>s.trim()).filter(Boolean).map(apaAuthorName);
+  if(names.length === 0) return '';
+  if(names.length === 1) return names[0];
+  if(names.length <= 20) return names.slice(0,-1).join(', ') + ', & ' + names[names.length-1];
+  return names.slice(0,19).join(', ') + ', ... ' + names[names.length-1];
+}
+function buildAPACitation(p){
+  const authors = apaAuthorsList(p.authors) || 'Unknown author';
+  const year = p.year || 'n.d.';
+  const title = p.title || 'Untitled';
+  const journal = p.journal || '';
+  const link = p.doi ? ('https://doi.org/' + p.doi.replace(/^https?:\/\/doi\.org\//i,'')) : (p.url || p.sourceUrl || '');
+  let citation = `${authors} (${year}). ${title}.`;
+  if(journal) citation += ` ${journal}.`;
+  if(link) citation += ` ${link}`;
+  return citation.trim();
+}
+
+async function copyCitation(p){
+  const text = buildAPACitation(p);
+  let copied = false;
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    }
+  }catch(e){ /* fall through to fallback below */ }
+
+  if(!copied){
+    // Fallback for browsers/contexts that block the async clipboard API.
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){ copied = false; }
+  }
+
+  showBanner(copied ? 'APA citation copied to clipboard.' : 'Could not copy automatically — select and copy this: ' + text, copied ? 'ok' : 'error');
 }
 
 // ---------- render ----------
@@ -615,8 +682,7 @@ function cardHtml(p){
   const tagsBlock = (p.tags && p.tags.length) ? `<div class="tags-row">${p.tags.map(t=>`<span class="tag-pill">${esc(t)}</span>`).join('')}</div>` : '';
 
   const citedBlock = (p.citedIn && p.citedIn.length) ? `
-    <div class="cited-label-row">Cited in our work</div>
-    <div class="cited-row">${p.citedIn.map(c=>`<span class="cited-pill">${esc(c)}<button onclick="removeCitation('${p.id}','${esc(c).replace(/'/g,"\\'")}')" title="Remove">×</button></span>`).join('')}</div>` : '';
+    <div class="cited-row"><span class="cited-label-inline">Cited in:</span>${p.citedIn.map(c=>`<span class="cited-pill">${esc(c)}<button onclick="removeCitation('${p.id}','${esc(c).replace(/'/g,"\\'")}')" title="Remove">×</button></span>`).join('')}</div>` : '';
   const citedBadge = (p.citedIn && p.citedIn.length) ? `<div class="cited-badge">Cited ×${p.citedIn.length}</div>` : '';
 
   return `<div class="card" data-id="${p.id}">
@@ -632,6 +698,7 @@ function cardHtml(p){
       <div class="card-footer">
         <span><span class="type-pill type-${p.type}">${typeLabel}</span>${addedDate ? ' · ' + addedDate : ''}</span>
         <div class="card-actions">
+          <button class="pdf-toggle ${p.pdfSaved?'active':''}" onclick="togglePdfSaved('${p.id}')">${p.pdfSaved ? '☑' : '☐'} PDF saved</button>
           <button onclick="quickAddCitation('${p.id}')">+ Cited</button>
           <button onclick="copyCitation(${JSON.stringify(p).replace(/"/g,'&quot;')})">Cite</button>
           <button onclick="toggleEdit('${p.id}')">Edit</button>
@@ -680,6 +747,7 @@ function listRowHtml(p){
     <div class="list-side">
       <span class="list-user">${esc(who)}</span>
       <span class="type-pill type-${p.type}">${typeLabel}</span>
+      <button class="pdf-toggle ${p.pdfSaved?'active':''}" onclick="togglePdfSaved('${p.id}')" title="PDF saved in Drive">${p.pdfSaved ? '☑' : '☐'} PDF</button>
       <div class="list-actions">
         <button onclick="copyCitation(${JSON.stringify(p).replace(/"/g,'&quot;')})">Cite</button>
         <button onclick="toggleEdit('${p.id}')">Edit</button>
